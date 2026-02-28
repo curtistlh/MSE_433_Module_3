@@ -3,7 +3,7 @@
 ## Problem Statement
 The model schedules tote releases and item picks in a conveyor-based warehouse system to minimize total order completion time.
 
-The system has four conveyors (0, 1, 2, 3). Totes are released to the start of conveyor 0. If an item is not picked when it reaches the assigned conveyor for its order, it recirculates through conveyors 1 -> 2 -> 3 -> 1.
+The system has four conveyors (0, 1, 2, 3). Totes are released to the start of conveyor 0. If an item is not picked when it reaches the assigned conveyor for its order, it recirculates through conveyors 0 -> 1 -> 2 -> 3 -> 0.
 
 ## Decisions
 The MILP jointly decides:
@@ -72,13 +72,10 @@ Alternative supported objective:
 For a unit u of order o assigned to conveyor c:
 - Release time = g * p_u
 - Base travel offset = (c+1) * g
-- Loop period = 0 if c=0, else 3*g
-- Pick time = g*p_u + (c+1)*g + (3*g)*k_u for c in {1,2,3}
+- Loop period = 4*g for all conveyors
+- Pick time = g*p_u + (c+1)*g + (4*g)*k_u for c in {0,1,2,3}
 
 The model links this pick-time expression to order start/completion bounds using big-M conditioning with a_{o,c}.
-
-Additional physical rule:
-- If an order is assigned to conveyor 0, recirculation loops are forced to zero for its units.
 
 ### 5) Order Start/Completion Definition
 - S_o is bounded above by all pick times of units in order o
@@ -103,6 +100,7 @@ If min_gap > 0, the model can enforce minimum slot-distance between units of the
 - Solve MILP with a time limit and relative MIP gap target
 - If no feasible incumbent is found, retry with extended limits
 - Accept either proven-optimal or time-limited feasible solutions
+- Current notebook configuration sets the primary solver time limit to 40 minutes (2400 seconds)
 
 ## Output Semantics
 - belt sequence: release slot order of all units plus recirculation-aware pick times
@@ -114,6 +112,6 @@ If min_gap > 0, the model can enforce minimum slot-distance between units of the
 ## Modeling Assumptions
 - Discrete release slots with one release per slot
 - Constant transfer step duration g
-- Recirculation loop approximated as fixed 1->2->3->1 cycle time
+- Recirculation loop approximated as fixed 0->1->2->3->0 cycle time
 - Conveyor assignment is order-level (not item-level)
 - Non-overlap between orders is enforced globally
