@@ -28,7 +28,8 @@ If a quantity is q for an item/order entry, the model creates q separate unit re
 - C: set of conveyors {0,1,2,3}
 
 ## Main Parameters
-- g: seconds per transfer step (5 seconds)
+- slot_time_sec: release-slot spacing in seconds (default 1 second)
+- belt_time_sec: conveyor traversal time from start to end (2 seconds)
 - L_t: number of units belonging to tote t
 - Big-M constants for sequencing and conditional timing
 
@@ -70,10 +71,11 @@ Alternative supported objective:
 
 ### 4) Recirculation-Aware Pick Timing
 For a unit u of order o assigned to conveyor c:
-- Release time = g * p_u
-- Base travel offset = (c+1) * g
-- Loop period = 4*g for all conveyors
-- Pick time = g*p_u + (c+1)*g + (4*g)*k_u for c in {0,1,2,3}
+- Release time = slot_time_sec * p_u
+- Item is picked at conveyor midpoint, so midpoint offset = belt_time_sec/2 = 1 second once it reaches a conveyor start
+- Base travel offset to conveyor c midpoint = c*belt_time_sec + belt_time_sec/2
+- Loop period = 4*belt_time_sec (full loop 0->1->2->3->0)
+- Pick time = slot_time_sec*p_u + (c*belt_time_sec + belt_time_sec/2) + (4*belt_time_sec)*k_u
 
 The model links this pick-time expression to order start/completion bounds using big-M conditioning with a_{o,c}.
 
@@ -82,12 +84,14 @@ The model links this pick-time expression to order start/completion bounds using
 - C_o is bounded below by all pick times of units in order o
 - S_o <= C_o
 
-### 6) One-Order-at-a-Time Logic
-For each order pair (i,j), a binary r_{i,j} chooses one of:
-- C_i <= S_j, or
-- C_j <= S_i
+### 6) Per-Conveyor One-Order-at-a-Time Logic
+For each order pair (i,j) and each conveyor c, disjunctive constraints are activated only when both orders are assigned to conveyor c.
 
-This enforces non-overlap between orders and lets the model choose order sequence.
+This enforces:
+- orders on the same conveyor cannot overlap,
+- orders on different conveyors may overlap.
+
+Therefore, at most 4 orders can be processed simultaneously (one active order per conveyor).
 
 ### 7) Optional User-Defined Precedence
 Additional precedence pairs (o1,o2) can be imposed as:
@@ -98,9 +102,9 @@ If min_gap > 0, the model can enforce minimum slot-distance between units of the
 
 ## Solver Strategy
 - Solve MILP with a time limit and relative MIP gap target
-- If no feasible incumbent is found, retry with extended limits
+- Current notebook configuration uses a strict single run (no fallback retries)
 - Accept either proven-optimal or time-limited feasible solutions
-- Current notebook configuration sets the primary solver time limit to 40 minutes (2400 seconds)
+- Current notebook configuration sets the primary solver time limit to 60 minutes (3600 seconds)
 
 ## Output Semantics
 - belt sequence: release slot order of all units plus recirculation-aware pick times
@@ -108,10 +112,15 @@ If min_gap > 0, the model can enforce minimum slot-distance between units of the
 - order sequence: order of first pick start times
 - order completion times: recirculation-aware completion seconds per order
 - order-to-conveyor map: optimized assignment from MILP
+- generated input files:
+  - full-order input file for all orders
+  - separate input file containing only the first 6 orders in the MILP sequence (while MILP is still solved on the full problem)
 
 ## Modeling Assumptions
 - Discrete release slots with one release per slot
 - Constant transfer step duration g
 - Recirculation loop approximated as fixed 0->1->2->3->0 cycle time
 - Conveyor assignment is order-level (not item-level)
-- Non-overlap between orders is enforced globally
+- Non-overlap is enforced per conveyor (not globally)
+
+
