@@ -3,7 +3,7 @@
 ## Problem Statement
 The model schedules tote releases and item picks in a conveyor-based warehouse system to minimize total order completion time.
 
-The system has four conveyors (0, 1, 2, 3). Totes are released to the start of conveyor 0. If an item is not picked when it reaches the assigned conveyor for its order, it recirculates through conveyors 0 -> 1 -> 2 -> 3 -> 0.
+The system has one input conveyor (0) and four picking conveyors (1, 2, 3, 4). Items are loaded onto conveyor 0, then dropped into conveyor 1 to enter the picking system. If an item is not picked, it recirculates among conveyors 1 -> 2 -> 3 -> 4 -> 1.
 
 ## Decisions
 The MILP jointly decides:
@@ -25,7 +25,7 @@ If a quantity is q for an item/order entry, the model creates q separate unit re
 - S: set of release slots, size N
 - T: set of totes
 - O: set of orders
-- C: set of conveyors {0,1,2,3}
+- C: set of picking conveyors {1,2,3,4} (input conveyor 0 is non-picking)
 
 ## Main Parameters
 - slot_time_sec: release-slot spacing in seconds (default 1 second)
@@ -70,12 +70,13 @@ Alternative supported objective:
   sum_{c in C} a_{o,c} = 1
 
 ### 4) Recirculation-Aware Pick Timing
-For a unit u of order o assigned to conveyor c:
+For a unit u of order o assigned to picking conveyor c in {1,2,3,4}:
 - Release time = slot_time_sec * p_u
 - Item is picked at conveyor midpoint, so midpoint offset = belt_time_sec/2 = 1 second once it reaches a conveyor start
-- Base travel offset to conveyor c midpoint = c*belt_time_sec + belt_time_sec/2
-- Loop period = 4*belt_time_sec (full loop 0->1->2->3->0)
-- Pick time = slot_time_sec*p_u + (c*belt_time_sec + belt_time_sec/2) + (4*belt_time_sec)*k_u
+- Input conveyor delay = belt_time_sec (2 seconds) from load point to conveyor 1 start
+- Base travel offset to conveyor c midpoint = belt_time_sec + (c-1)*belt_time_sec + belt_time_sec/2
+- Loop period = 4*belt_time_sec (full loop among 1->2->3->4->1)
+- Pick time = slot_time_sec*p_u + (belt_time_sec + (c-1)*belt_time_sec + belt_time_sec/2) + (4*belt_time_sec)*k_u
 
 The model links this pick-time expression to order start/completion bounds using big-M conditioning with a_{o,c}.
 
@@ -118,8 +119,9 @@ If min_gap > 0, the model can enforce minimum slot-distance between units of the
 
 ## Modeling Assumptions
 - Discrete release slots with one release per slot
-- Constant transfer step duration g
-- Recirculation loop approximated as fixed 0->1->2->3->0 cycle time
+- Constant slot spacing (slot_time_sec) and conveyor travel time (belt_time_sec)
+- Input conveyor 0 only transports items into the system and does not pick
+- Recirculation loop approximated as fixed 1->2->3->4->1 cycle time
 - Conveyor assignment is order-level (not item-level)
 - Non-overlap is enforced per conveyor (not globally)
 
