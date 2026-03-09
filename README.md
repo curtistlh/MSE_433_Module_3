@@ -404,7 +404,7 @@ This enforces:
 - `tote_sequence`, `tote_blocks`, `tote_item_sequence`: tote block order and implied unit-level release ordering.
 
 ##### MILP Solver Strategy
-- Solve MILP with a time limit and relative MIP gap target.
+- Solve MILP with a time limit and relative MIP gap target, due to computational limits (solving for optimal is too costly).
 - Current notebook configuration uses a strict single run (no fallback retries).
 - Accept either proven-optimal or time-limited feasible solutions.
 - Current notebook configuration sets the primary solver time limit to 60 minutes (3600 seconds).
@@ -468,4 +468,5 @@ Recommended Python packages:
   - `MSE433_M3_all_results.csv`
   - `MSE433_M3_generated_input.csv`
   - `MSE433_M3_generated_input_first_6_orders.csv`
+
 
