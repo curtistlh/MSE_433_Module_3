@@ -138,8 +138,6 @@ Outputs:
 
 #### Detailed MILP Formulation
 
-This section restores the full MILP formulation details (as in the previous README version).
-
 ##### MILP Decisions
 The MILP jointly decides:
 - Per-conveyor order sequence (orders on the same conveyor are non-overlapping; different conveyors may run in parallel)
@@ -470,3 +468,4 @@ Recommended Python packages:
   - `MSE433_M3_all_results.csv`
   - `MSE433_M3_generated_input.csv`
   - `MSE433_M3_generated_input_first_6_orders.csv`
+
