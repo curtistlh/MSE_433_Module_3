@@ -1,0 +1,5 @@
+heuristic,mean_makespan_sec,median_makespan_sec,std_makespan_sec,min_makespan_sec,max_makespan_sec,failed_runs,mean_recirculations,mean_finish_spread_sec,win_count,success_mean_makespan_sec,success_median_makespan_sec,success_count,success_rate
+FIFO,63354.066667,100000.0,48985.538092,35.0,100000.0,19,4.7,19.066667,8,56.545455,49.0,11,0.366667
+Order Driven,63356.266667,100000.0,48982.597126,44.0,100000.0,19,6.266667,18.833333,6,62.545455,58.0,11,0.366667
+Assignment First,73346.833333,100000.0,44954.874874,36.0,100000.0,22,4.166667,24.966667,4,50.625,52.0,8,0.266667
+Greedy,83343.3,100000.0,37882.235852,41.0,100000.0,25,4.533333,15.133333,1,59.8,51.0,5,0.166667

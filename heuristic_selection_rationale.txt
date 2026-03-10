@@ -237,3 +237,79 @@ Key Takeaways
    through one entry point, which means tote release order is the single most 
    impactful decision. Heuristics that do not account for this bottleneck when 
    making sequencing decisions will underperform.
+
+
+================================================================================
+Simulation Validation Update
+================================================================================
+
+We later validated the system using a shared conveyor simulation model and a
+batch of generated order instances. This was important because each heuristic was
+only tested once in real life, which means the original physical comparison was
+still exposed to human error, setup differences, and run-to-run variability.
+
+The simulation was designed to match the physical conveyor logic closely:
+- one input conveyor feeding the picking loop
+- four picking conveyors in a loop
+- one active order per conveyor at a time
+- items recirculate if they are not picked on that pass
+- the next order on a conveyor only starts when the current one is complete
+
+Most importantly, we did a much stronger physical-vs-simulation comparison than
+just comparing final makespan. For the same first-6-order scenario used in the
+physical test, we compared:
+- total makespan
+- first pick and last pick time
+- active time span on each conveyor
+- pick counts per conveyor
+- exact shape sequence per conveyor
+
+This gave us a much better validation result. The simulator matched the real
+system very closely at the sequence level:
+- Assignment First matched the physical run exactly on 4 out of 4 conveyors
+- FIFO matched exactly on 3 out of 4 conveyors
+- Greedy matched exactly on 3 out of 4 conveyors
+- Order Driven matched exactly on 3 out of 4 conveyors
+
+Also, all four methods matched the physical pick counts. That means the simulator
+is not just getting the total time “kind of close” — it is reproducing the actual
+order of picks on the conveyors quite well. The remaining differences were mostly
+timing differences, not logic differences.
+
+The physical system was consistently slower than the simulator, which is expected.
+The simulation does not include:
+- manual tote loading delay
+- human hesitation while reading sequences
+- small sensing and pneumatic arm timing differences
+- general run-to-run physical variation
+
+When we measured the active-span ratio (physical span divided by simulated span),
+Assignment First again stood out:
+- Assignment First: about 3.8x slower physically than in simulation
+- FIFO: about 5.7x slower
+- Greedy: about 5.2x slower
+- Order Driven: about 5.8x slower
+
+This matters because it suggests Assignment First was not only the fastest
+physical heuristic, but also the one whose simulated behavior most closely matched
+the real conveyor behavior.
+
+We then ran a larger validation study across 30 generated instances. That study
+showed that there is no single heuristic that dominates on every metric:
+- FIFO and Order Driven had the best completion reliability in the simulator
+- Assignment First was the fastest on the runs that completed successfully
+- Greedy was the least reliable under the strict scanner-based conveyor logic
+
+So the final interpretation is more nuanced:
+- In the one-time physical test, Assignment First was the best performer
+- In the detailed physical-vs-simulation validation, Assignment First also had
+  the strongest conveyor-level match
+- In the batch simulation study, FIFO was the most reliable overall, while
+  Assignment First was the fastest when the run completed successfully
+
+This means our conclusions should be framed carefully. If the decision criterion
+is “what worked best in the real conveyor demo and also matched the simulator most
+closely,” then Assignment First has the strongest case. If the criterion is “what
+finishes the largest fraction of random instances under the strict simulator,”
+then FIFO is the safer option. If the criterion is “what is fastest when it does
+work,” Assignment First again looks strongest.
