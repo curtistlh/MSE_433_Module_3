@@ -1,0 +1,17 @@
+[project]
+name = "wareseq"
+version = "0.1.0"
+description = "Utilities for MSE433 Module 3 conveyor tote sequencing: parse order CSVs and generate simulator input files."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pandas>=2.0.0"
+]
+
+[project.scripts]
+wareseq-generate-input = "wareseq.generate_input:main"
+wareseq-evaluate-plan = "wareseq.evaluate_plan:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
