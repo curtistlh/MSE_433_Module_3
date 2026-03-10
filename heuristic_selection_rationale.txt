@@ -1,0 +1,239 @@
+Heuristic Selection Rationale
+=============================
+
+1) FIFO Baseline — Why We Chose It
+-----------------------------------
+We chose First In, First Out as our baseline because it is the simplest and most 
+commonly encountered scheduling rule in both academic and real-world settings. We 
+have seen FIFO across nearly every management engineering course since first year — 
+inventory management, facility management, scheduling, statistics, and operations 
+research. It shows up in everyday life too: lineups at a coffee shop, print queues, 
+traffic flow, and warehouse order processing all follow FIFO naturally.
+
+FIFO makes sense as a baseline specifically because it requires zero intelligence. 
+There is no optimization, no look-ahead, and no prioritization. Items are processed 
+in the exact order they arrive, which means any heuristic that performs better than 
+FIFO is demonstrably adding value through its decision-making logic. In experimental 
+design terms, FIFO is the control group — it tells us what happens when we make no 
+effort to optimize, so we can measure how much improvement each heuristic actually 
+brings.
+
+
+2) Greedy Heuristic — Why We Chose It
+--------------------------------------
+The greedy approach comes directly from our algorithms and data structures courses, 
+as well as our machine learning coursework. Greedy algorithms are one of the most 
+fundamental problem-solving strategies in computer science: at each step, make the 
+locally optimal choice and move on. We have used greedy methods in data cleaning, 
+feature selection, graph traversal, and countless other problems throughout our 
+academic and work experience.
+
+We chose a greedy heuristic because it strikes a practical balance between solution 
+quality and computational cost. Unlike FIFO, it actually thinks about what it is 
+doing — it sorts orders by size (shortest first), balances load across conveyors, 
+and picks totes based on urgency. But unlike the MILP, it runs in milliseconds and 
+does not require a solver. In real warehouse settings, decisions often need to be 
+made quickly, so a fast heuristic that produces good (not necessarily optimal) 
+solutions is extremely valuable. The greedy approach also has a well-known 
+theoretical foundation: Shortest Processing Time (SPT) ordering is provably optimal 
+for minimizing total completion time on a single machine, and it remains a strong 
+heuristic for parallel machine scheduling.
+
+
+3) Order Driven Heuristic — Why We Chose It
+--------------------------------------------
+The order driven heuristic comes from our scheduling course, where we study 
+job-shop and flow-shop sequencing problems. The core idea is Shortest Remaining 
+Processing Time (SRPT): always work on the order that is closest to being finished. 
+This is a well-known priority rule in production scheduling and warehouse operations.
+
+We chose this approach because it directly reflects how many real warehouses 
+actually operate — they focus on completing one order at a time before moving to the 
+next. The heuristic pairs SRPT ordering with a best-match tote selection strategy, 
+where it picks the tote that covers the most remaining demand for the active order. 
+This mirrors the practical warehouse logic of "finish what you started before 
+grabbing new work," which reduces work-in-progress and order lead times. It is a 
+natural fit for our conveyor system because each conveyor processes one order at a 
+time anyway.
+
+
+4) Assignment First Heuristic — Why We Chose It
+------------------------------------------------
+The Assignment First approach comes from our operations research and facility 
+planning courses, where we learned about hierarchical decision-making and problem 
+decomposition. The idea is to break a complex joint decision into smaller sequential 
+sub-decisions: first decide which conveyor each order goes to (the assignment), then 
+figure out the tote sequencing and item ordering around that fixed assignment.
+
+We chose this because it reflects how real warehouse systems often work in practice. 
+Conveyor lane assignments are typically decided upfront based on zone allocation, 
+workload distribution, or physical layout constraints — they are a strategic 
+decision. The detailed sequencing of totes and items is then a tactical decision 
+made within that fixed framework. By separating these two levels of planning, the 
+problem becomes much easier to reason about and solve. This decomposition principle 
+is something we have encountered repeatedly in our optimization and supply chain 
+courses: when a problem is too complex to solve all at once, fix some decisions 
+first and optimize the rest. The Assignment First heuristic tests whether making 
+the conveyor assignment decision well (through load balancing) and then focusing on 
+completing active orders gives us good overall performance.
+
+
+5) MILP — Why We Chose It
+--------------------------
+Mixed Integer Linear Programming is one of the core techniques from our optimization 
+courses. Unlike the heuristics above, the MILP formulates the entire problem 
+mathematically — every decision variable, constraint, and objective — and hands it 
+to a solver to find the provably best (or near-best) solution. We included it 
+because it serves as our upper bound on solution quality: it tells us how close the 
+heuristics are getting to the true optimum.
+
+We chose MILP because it is the gold standard for combinatorial optimization in 
+operations research. It jointly optimizes order sequencing, conveyor assignment, 
+tote release order, and recirculation timing — all the decisions that the heuristics 
+handle separately or approximately. The tradeoff is computation time: the MILP can 
+take 40-60 minutes to solve, which is impractical for real-time warehouse decisions 
+but invaluable for benchmarking. By comparing each heuristic's performance against 
+the MILP solution, we can quantify the gap between fast approximate methods and the 
+theoretical optimum.
+
+
+================================================================================
+Physical Experiment Results — Comparison and Analysis
+================================================================================
+
+We ran all five methods on the physical Ideas Clinic conveyor system using the 
+first 6 orders. Each heuristic produced an input CSV that was fed into the conveyor, 
+and the system recorded timestamps for every item pick. The physical output files 
+are named grp_2_<method>_output.csv.
+
+All methods processed the same 20 items (6 orders) across 4 conveyors with the 
+same item distribution per conveyor: 7 items on Conv 1, 7 on Conv 2, 2 on Conv 3, 
+and 4 on Conv 4.
+
+
+Results Summary
+---------------
+                        Total Makespan    Conv 1 Done    Conv 2 Done    Conv 3 Done    Conv 4 Done
+Assignment First:          112.2s           81.6s         112.2s          65.3s          92.8s
+FIFO Baseline:             124.9s           85.2s         106.9s          75.4s         124.9s
+Order Driven:              132.2s           45.0s         125.8s         110.9s         132.2s
+Greedy Heuristic:          136.1s           39.4s         136.1s          82.9s         107.2s
+
+Ranking by total makespan (fastest to slowest):
+  1. Assignment First    — 112.2s
+  2. FIFO Baseline       — 124.9s  (+11.3% slower)
+  3. Order Driven        — 132.2s  (+17.8% slower)
+  4. Greedy Heuristic    — 136.1s  (+21.3% slower)
+
+
+Analysis: Why Assignment First Won
+-----------------------------------
+Assignment First achieved the best makespan primarily because of load balance. 
+Its per-conveyor completion times are the most evenly spread: the gap between its 
+fastest and slowest conveyor is only 46.9 seconds (65.3s to 112.2s). No single 
+conveyor became a severe bottleneck.
+
+In contrast, the Greedy Heuristic finished Conv 1 extremely fast (39.4s) but left 
+Conv 2 running until 136.1s — a spread of 96.7 seconds. This means Conv 1 sat idle 
+for almost 100 seconds while Conv 2 was still working. The Greedy approach optimized 
+too aggressively for finishing early orders quickly (SPT), which front-loaded work 
+onto Conv 1 and starved Conv 2 of early totes. In a system with a single input 
+conveyor bottleneck, this imbalance is costly.
+
+Assignment First's strategy of deciding conveyor assignments upfront and then 
+sequencing totes to complete the active order on each conveyor produced a more 
+balanced workload across all four conveyors, which is ultimately what determines 
+makespan in a parallel system.
+
+
+Analysis: Why FIFO Beat the Greedy and Order Driven Heuristics
+--------------------------------------------------------------
+This is a surprising result — the "dumb" baseline outperformed two intelligent 
+heuristics. Several factors explain this:
+
+1. Single input conveyor bottleneck. All items enter through one input conveyor 
+   before reaching their assigned picking conveyor. The heuristics that 
+   aggressively prioritize certain orders (Greedy focuses on small orders first, 
+   Order Driven focuses on closest-to-completion) end up creating clusters of 
+   items for one or two conveyors while leaving the others idle. FIFO distributes 
+   items more naturally because it does not try to cluster anything.
+
+2. Recirculation penalty. When items arrive at a conveyor that is still busy with 
+   a previous order, they recirculate through the full loop (1 -> 2 -> 3 -> 4 -> 1) 
+   and waste time. The Greedy and Order Driven heuristics sometimes released totes 
+   that contained items for orders assigned to busy conveyors, forcing those items 
+   to recirculate multiple times. FIFO's naive ordering happened to avoid the worst 
+   cases of this by spreading tote releases more evenly.
+
+3. Greedy's SPT bias created an imbalanced schedule. By putting the smallest orders 
+   first, the Greedy heuristic finished Conv 1 and Conv 3 very quickly but pushed 
+   the larger orders (Order 2 and Order 5) entirely to Conv 2. Conv 2 ended up 
+   processing 7 items sequentially with some items arriving late because their 
+   totes were released after totes for the already-finished conveyors. The result 
+   was a long tail on Conv 2 (136.1s) that dominated the makespan.
+
+4. Order Driven had similar clustering issues. By always working on the 
+   closest-to-completion order, the Order Driven heuristic pulled totes out of 
+   sequence to satisfy immediate demand, which delayed tote releases for orders 
+   on other conveyors. Conv 4 did not receive its first item until 95.5 seconds 
+   into the run, meaning it sat idle for over a minute and a half.
+
+
+The Role of Human Error
+------------------------
+It is important to note that these are physical experiments, not simulations. 
+Several sources of variability and human error could have affected the results:
+
+1. Tote loading speed. The operator manually loads totes onto the input conveyor. 
+   Variations in how quickly totes were loaded (fumbling, hesitation, reading the 
+   sequence list) directly affect when items enter the system. A 2-3 second delay 
+   on a tote propagates to every item in that tote.
+
+2. Physical pick timing. The conveyor system's sensors and mechanical diverters 
+   have inherent variability. The same item on two different runs might be picked 
+   0.5-2 seconds apart due to sensor response time, belt speed fluctuation, or 
+   item positioning on the belt.
+
+3. Tote preparation. If a tote was not loaded with the correct items or in the 
+   right position before the experiment, time could be lost re-sorting or 
+   correcting mid-run.
+
+4. Run-to-run variability. Each heuristic was tested in a separate physical run. 
+   Differences in operator readiness, system warm-up, or minor mechanical issues 
+   between runs could account for several seconds of difference. This means that 
+   small performance gaps (under ~5 seconds) may not be statistically significant.
+
+5. Learning effect. If the heuristics were tested in a fixed order, the operator 
+   may have gotten faster at loading totes in later runs. This could slightly 
+   advantage whichever method was tested last.
+
+Given these sources of error, the 12.7-second gap between Assignment First (112.2s) 
+and FIFO (124.9s) is likely meaningful. The 11.2-second gap between FIFO and 
+Order Driven (132.2s) is also probably real. However, the 3.9-second gap between 
+Order Driven and Greedy (136.1s) is within the range where human error could be 
+a factor.
+
+
+Key Takeaways
+--------------
+1. Load balance matters more than local optimality. In a parallel conveyor system 
+   with a shared input conveyor, the method that distributes work most evenly 
+   across conveyors wins. Assignment First achieved this by making the conveyor 
+   assignment decision upfront and then working to complete each conveyor's active 
+   order as quickly as possible.
+
+2. Aggressive optimization can backfire. The Greedy heuristic's SPT strategy is 
+   theoretically strong for single-machine scheduling, but on a parallel system 
+   with a shared input bottleneck, it created severe imbalances. Finishing one 
+   conveyor in 39 seconds is meaningless if another takes 136 seconds.
+
+3. FIFO is a surprisingly tough baseline. Its lack of intelligence turned out to 
+   be an advantage in one sense: it did not create the artificial clustering and 
+   imbalance that the smarter heuristics did. This is a well-known phenomenon in 
+   operations research — simple rules can outperform complex ones when the complex 
+   ones are not designed for the specific system constraints.
+
+4. The single input conveyor is the dominant constraint. All items must pass 
+   through one entry point, which means tote release order is the single most 
+   impactful decision. Heuristics that do not account for this bottleneck when 
+   making sequencing decisions will underperform.
