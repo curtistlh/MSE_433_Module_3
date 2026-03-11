@@ -176,15 +176,10 @@ If a quantity is q for an item/order entry, the model creates q separate unit re
 - S_o >= 0: start time of order o
 - C_o >= 0: completion time of order o
 - r_{i,j} in {0,1} for i<j: binary order precedence selector (i before j vs j before i)
-- Optional gap binaries for same-order spacing (when min_gap > 0)
 
 ##### Objective
-Primary objective (default):
-- Minimize sum of order completion times
+Minimize sum of order completion times:
   min sum_{o in O} C_o
-
-Alternative supported objective:
-- Minimize makespan
 
 ##### Core Constraints
 
@@ -226,13 +221,6 @@ This enforces:
 - orders on different conveyors may overlap.
 
 Therefore, at most 4 orders can be processed simultaneously (one active order per conveyor).
-
-7) Optional user-defined precedence:
-Additional precedence pairs (o1,o2) can be imposed as:
-- C_{o1} <= S_{o2}
-
-8) Optional intra-order spacing:
-If min_gap > 0, the model can enforce minimum slot-distance between units of the same order.
 
 ##### Mathematical MILP Formulation
 
@@ -358,32 +346,6 @@ C_j - S_i \le M\,(2-a_{i,c}-a_{j,c}+r_{i,j})
 
 These are active only when both orders are assigned to the same conveyor; therefore, one conveyor cannot process two overlapping orders, while different conveyors may run in parallel.
 
-**8) Optional precedence**
-
-```math
-C_{o_1} \le S_{o_2}
-```
-
-for each user-specified precedence pair `(o_1, o_2)`.
-
-**9) Optional same-order slot spacing (`min_gap > 0`)**
-
-Let `G` be the selected set of same-order unit pairs `(u,v)`. For each `(u,v) in G`, add binary `z_{u,v}` and:
-
-```math
-p_v - p_u + N z_{u,v} \le N - \text{min\_gap}
-```
-
-```math
-p_u - p_v - N z_{u,v} \le -\text{min\_gap}
-```
-
-This enforces:
-
-```math
-|p_u-p_v| \ge \text{min\_gap}
-```
-
 ###### Interpretation of Each Constraint
 - Objective: minimizes total order completion time.
 - 1) Ensures one unit per slot and one slot per unit.
@@ -393,8 +355,6 @@ This enforces:
 - 5) Assigns each order to exactly one conveyor.
 - 6) Links order start/completion bounds to recirculation-aware pick timing.
 - 7) Enforces one active order at a time per conveyor while allowing parallelism across conveyors.
-- 8) Adds optional user-defined order precedence.
-- 9) Adds optional minimum slot distance between units of the same order.
 
 ###### How to Read MILP Solver Outputs
 - `order_to_conveyor`: optimized order-to-conveyor assignment.
@@ -452,7 +412,7 @@ Recommended Python packages:
 - FIFO notebook currently uses embedded order/tote configuration instead of dynamic CSV-driven planning.
 - Greedy and Order-Driven notebooks currently default to first 6 orders.
 - Heuristic methods do not provide optimality certificates.
-- MILP quality depends on solver time limit and mip gap settings.
+- MILP quality depends on solver time limit settings.
 
 ## Folder Structure
 - `FIFO/`
@@ -468,5 +428,6 @@ Recommended Python packages:
   - `MSE433_M3_all_results.csv`
   - `MSE433_M3_generated_input.csv`
   - `MSE433_M3_generated_input_first_6_orders.csv`
+
 
 
