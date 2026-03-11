@@ -1,0 +1,5 @@
+heuristic,simulated_makespan_sec,physical_makespan_sec,absolute_gap_sec,ratio_physical_to_simulated,simulated_recirculations,simulated_finish_spread_sec,physical_rank,simulated_rank
+Assignment First,31.0,112.229758,81.229758,3.620315,7,14.0,1,4
+FIFO,23.0,124.924936,101.924936,5.431519,0,7.0,2,1
+Order Driven,24.0,132.234802,108.234802,5.509783,1,15.0,3,2
+Greedy,28.0,136.072929,108.072929,4.859747,4,19.0,4,3

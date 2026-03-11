@@ -1,0 +1,77 @@
+Simulation Validation Report
+============================
+
+1) What we validated
+--------------------
+We validated the four non-MILP methods (FIFO, Assignment First, Greedy, and Order Driven) using a shared simulation model of the conveyor system.
+The simulator models one input conveyor, a four-conveyor picking loop, one active order per conveyor, and item recirculation when an item is not picked on a pass.
+
+2) Generator logic
+------------------
+We used the same generator logic as the provided data-generator notebook to create new random order instances with a seed.
+The one intentional adjustment was capping item types to the 8 physical shapes supported by the real conveyor system (circle through cross), because the notebook can occasionally produce one extra unsupported item ID.
+
+3) Validation setup
+-------------------
+We ran 30 generated instances (seeds 100 to 129).
+For each generated instance, all four heuristics were run on the exact same order set so the comparison is fair.
+The primary metric was makespan, meaning the time of the final successful pick.
+
+4) First-6 physical reality check
+---------------------------------
+We also simulated the same first-6-order scenario that was used in the physical conveyor tests and compared simulated makespan to the real grp_2 logs.
+
+- Assignment First: simulated 31.000s, physical 112.230s, gap 81.230s, physical/simulated ratio 3.620
+- FIFO: simulated 23.000s, physical 124.925s, gap 101.925s, physical/simulated ratio 5.432
+- Order Driven: simulated 24.000s, physical 132.235s, gap 108.235s, physical/simulated ratio 5.510
+- Greedy: simulated 28.000s, physical 136.073s, gap 108.073s, physical/simulated ratio 4.860
+
+Detailed first-6 conveyor-level comparison:
+
+- FIFO: exact conveyor sequence matches on 3/4 conveyors, pick-count match True, active-span ratio (physical/simulated) 5.739
+- Assignment First: exact conveyor sequence matches on 4/4 conveyors, pick-count match True, active-span ratio (physical/simulated) 3.805
+- Greedy: exact conveyor sequence matches on 3/4 conveyors, pick-count match True, active-span ratio (physical/simulated) 5.163
+- Order Driven: exact conveyor sequence matches on 3/4 conveyors, pick-count match True, active-span ratio (physical/simulated) 5.834
+
+The physical runs were consistently slower than the simulation, which is expected because the simulation does not add manual tote-loading delays, human reaction time, or sensor/actuator variability.
+Because the physical tests were single runs only, we used them as a sanity check rather than the only source of truth.
+In the one-time physical experiment, the fastest method was Assignment First.
+The stronger result is that the physical and simulated pick sequences match very closely at the conveyor level: Assignment First matched perfectly on all 4 conveyors, while FIFO, Greedy, and Order Driven each matched exactly on 3 of 4 conveyors.
+The remaining mismatches were small local ordering differences within a conveyor, not total count mismatches, which supports the claim that the simulator is capturing the real system logic reasonably well.
+
+5) Batch results across generated instances
+-------------------------------------------
+- FIFO: success 11/30 (36.7%), successful-run mean makespan 56.545s, penalized mean makespan 63354.067s, wins 8/30, mean recirculations 4.700, mean finish spread 19.067s
+- Order Driven: success 11/30 (36.7%), successful-run mean makespan 62.545s, penalized mean makespan 63356.267s, wins 6/30, mean recirculations 6.267, mean finish spread 18.833s
+- Assignment First: success 8/30 (26.7%), successful-run mean makespan 50.625s, penalized mean makespan 73346.833s, wins 4/30, mean recirculations 4.167, mean finish spread 24.967s
+- Greedy: success 5/30 (16.7%), successful-run mean makespan 59.800s, penalized mean makespan 83343.300s, wins 1/30, mean recirculations 4.533, mean finish spread 15.133s
+
+6) Main conclusion
+------------------
+There was not one single heuristic that dominated on every metric.
+- Best reliability under the simulator: FIFO with a success rate of 36.7%.
+- Fastest among successful runs: Assignment First with a successful-run mean makespan of 50.625s.
+- Best penalty-adjusted average (counting unfinished runs as bad outcomes): FIFO with mean makespan 63354.067s.
+
+This means the interpretation depends on what matters more: finishing reliably on random instances, or being fast on the runs that do finish.
+
+7) Why the better-performing methods likely did well
+----------------------------------------------------
+Assignment First did well because it balances work across conveyors first, which reduces the chance that one conveyor becomes the long-tail bottleneck.
+In a system with one shared input conveyor and recirculation, load balance matters a lot: if one conveyor gets overloaded, the whole makespan is dominated by that conveyor.
+
+A second important takeaway is that many randomly generated instances did not complete under the strict physical scanner logic. This happened when a generic item type was taken by an earlier active order, leaving a later order short of that same shape. That is a real system risk, not just a coding artifact.
+
+8) Why physical results may differ from simulated results
+--------------------------------------------------------
+- Human tote loading can add delay between releases.
+- Manual setup or hesitation can change when items enter the conveyor.
+- Sensors and pneumatic arms can introduce small timing differences from run to run.
+- A single physical run per heuristic is noisy; the batch simulation gives a more reliable average comparison.
+
+9) Files produced
+-----------------
+- simulation_validation_results.csv: per-seed results for all heuristics
+- physical_vs_simulation_comparison.csv: first-6 physical vs simulated comparison
+- physical_vs_simulation_detailed.csv: conveyor-by-conveyor pick-count, timing-span, and sequence comparison
+- simulation_validation_report.txt: this summary
