@@ -178,8 +178,7 @@ If a quantity is q for an item/order entry, the model creates q separate unit re
 - r_{i,j} in {0,1} for i<j: binary order precedence selector (i before j vs j before i)
 
 ##### Objective
-Minimize sum of order completion times:
-  min sum_{o in O} C_o
+Minimize makespan
 
 ##### Core Constraints
 
@@ -257,13 +256,7 @@ b_c = B + (c-1)B + \frac{B}{2}
 - `r_{i,j} in {0,1}` for `i<j`: sequencing selector for order pair `(i,j)`
 - Optional `z_{u,v} in {0,1}`: same-order spacing selector for selected pairs `(u,v)`
 
-###### Objective (default)
-
-```math
-\min \sum_{o \in O} C_o
-```
-
-Alternative objective:
+###### Objective
 
 ```math
 \min C_{\max} \quad \text{with } C_o \le C_{\max},\ \forall o \in O
@@ -428,6 +421,7 @@ Recommended Python packages:
   - `MSE433_M3_all_results.csv`
   - `MSE433_M3_generated_input.csv`
   - `MSE433_M3_generated_input_first_6_orders.csv`
+
 
 
 
