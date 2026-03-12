@@ -117,7 +117,7 @@ What it does:
   - tote contiguous block placement
   - unit-to-release-slot assignment
   - recirculation loop count per unit
-- Objective: minimize sum of order completion times.
+- Objective: minimize makespan of completing all orders.
 
 Model highlights:
 - Binary assignment variables for unit-slot, tote-start, slot-tote, and order-conveyor.
@@ -340,7 +340,7 @@ C_j - S_i \le M\,(2-a_{i,c}-a_{j,c}+r_{i,j})
 These are active only when both orders are assigned to the same conveyor; therefore, one conveyor cannot process two overlapping orders, while different conveyors may run in parallel.
 
 ###### Interpretation of Each Constraint
-- Objective: minimizes total order completion time.
+- Objective: minimizes total makespan of completing all orders.
 - 1) Ensures one unit per slot and one slot per unit.
 - 2) Forces each tote into one contiguous release block and keeps unit releases inside its tote block.
 - 3) Converts slot assignment binaries into numeric release slot index `p_u`.
@@ -421,6 +421,7 @@ Recommended Python packages:
   - `MSE433_M3_all_results.csv`
   - `MSE433_M3_generated_input.csv`
   - `MSE433_M3_generated_input_first_6_orders.csv`
+
 
 
 
