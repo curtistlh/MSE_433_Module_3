@@ -1,0 +1,4 @@
+seed,solver_status,objective_metric,objective_value_seconds,makespan_seconds,sum_completion_seconds,runtime_seconds,run_time_limit_seconds,run_mip_rel_gap,solver_message
+121,0,makespan,39.0,39.0,254.0,80.288,600,0.0,Optimization terminated successfully. (HiGHS Status 7: Optimal)
+125,0,makespan,41.0,41.0,311.0,204.991,600,0.0,Optimization terminated successfully. (HiGHS Status 7: Optimal)
+128,0,makespan,43.0,43.0,361.0,94.865,600,0.0,Optimization terminated successfully. (HiGHS Status 7: Optimal)
