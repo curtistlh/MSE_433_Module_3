@@ -254,7 +254,6 @@ b_c = B + (c-1)B + \frac{B}{2}
 - `k_u in Z_{>=0}`: recirculation loops for unit `u`, with implementation bound `k_u <= N`
 - `S_o, C_o >= 0`: start and completion time of order `o`
 - `r_{i,j} in {0,1}` for `i<j`: sequencing selector for order pair `(i,j)`
-- Optional `z_{u,v} in {0,1}`: same-order spacing selector for selected pairs `(u,v)`
 
 ###### Objective
 
