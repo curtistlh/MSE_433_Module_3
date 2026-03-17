@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+src/wareseq/__init__.py
+src/wareseq/constants.py
+src/wareseq/evaluate_plan.py
+src/wareseq/generate_input.py
+src/wareseq/heuristics.py
+src/wareseq/io_utils.py
+src/wareseq/template.py
+src/wareseq.egg-info/PKG-INFO
+src/wareseq.egg-info/SOURCES.txt
+src/wareseq.egg-info/dependency_links.txt
+src/wareseq.egg-info/entry_points.txt
+src/wareseq.egg-info/requires.txt
+src/wareseq.egg-info/top_level.txt

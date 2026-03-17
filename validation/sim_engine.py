@@ -93,6 +93,39 @@ class ConveyorSimulator:
         self.conveyor_idle_sec: dict[int, float] = {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0}
         self.event_rows: list[dict[str, float | int]] = []
 
+    def state_signature(self) -> tuple:
+        def compact_requirements(order: PlannedOrder | None) -> tuple[tuple[int, int], ...] | None:
+            if order is None:
+                return None
+            return tuple(sorted((item_type_id, qty) for item_type_id, qty in order.requirements.items() if qty > 0))
+
+        belts = tuple(
+            tuple(
+                None if slot is None else (slot.item_type_id, slot.tote_id)
+                for slot in self.belts[conveyor_id]
+            )
+            for conveyor_id in range(1, 5)
+        )
+        input_pipe = tuple(None if slot is None else (slot.item_type_id, slot.tote_id) for slot in self.input_pipe)
+        active_orders = tuple(
+            None
+            if self.active_orders[conveyor_id] is None
+            else (
+                self.active_orders[conveyor_id].order_id,
+                compact_requirements(self.active_orders[conveyor_id]),
+                tuple(
+                    (
+                        queued.order_id,
+                        compact_requirements(queued),
+                    )
+                    for queued in self.schedules[conveyor_id]
+                ),
+            )
+            for conveyor_id in range(1, 5)
+        )
+        release_queue = tuple((unit.item_type_id, unit.tote_id) for unit in self.release_queue)
+        return belts, input_pipe, active_orders, release_queue
+
     def items_in_loop(self) -> int:
         return sum(1 for slots in self.belts.values() for slot in slots if slot is not None)
 
@@ -177,16 +210,12 @@ class ConveyorSimulator:
             if self.active_orders[conveyor_id] is not None and self.belts[conveyor_id][0] is None and self.belts[conveyor_id][1] is None:
                 self.conveyor_idle_sec[conveyor_id] += self.step_sec
 
-    def run(self) -> SimulationResult:
-        steps = 0
-        terminated_early = 0
-        while not self.all_done():
-            steps += 1
-            if steps > self.max_steps:
-                terminated_early = 1
-                break
-            self.step()
-
+    def build_result(
+        self,
+        *,
+        terminated_early: int,
+        override_makespan_sec: float | None = None,
+    ) -> SimulationResult:
         picked_counts: dict[int, int] = {}
         for row in self.event_rows:
             order_id = int(row["order_id"])
@@ -211,7 +240,7 @@ class ConveyorSimulator:
             )
 
         if terminated_early:
-            makespan = self.time_sec
+            makespan = self.time_sec if override_makespan_sec is None else override_makespan_sec
         else:
             makespan = max(self.order_completion_sec.values(), default=0.0)
         total_recirculations = sum(int(row["recirculations"]) for row in self.event_rows)
@@ -249,3 +278,15 @@ class ConveyorSimulator:
             order_rows=order_rows,
             summary_rows=summary_rows,
         )
+
+    def run(self) -> SimulationResult:
+        steps = 0
+        terminated_early = 0
+        while not self.all_done():
+            steps += 1
+            if steps > self.max_steps:
+                terminated_early = 1
+                break
+            self.step()
+
+        return self.build_result(terminated_early=terminated_early)

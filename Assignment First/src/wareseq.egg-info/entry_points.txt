@@ -1,0 +1,3 @@
+[console_scripts]
+wareseq-evaluate-plan = wareseq.evaluate_plan:main
+wareseq-generate-input = wareseq.generate_input:main
