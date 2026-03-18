@@ -11,6 +11,7 @@ from validation.sim_engine import ConveyorSimulator, PlannedOrder, ReleaseUnit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+RESULTS_DIR = REPO_ROOT / "results" / "validation"
 HEURISTICS = ["FIFO", "Assignment First", "Greedy", "Order Driven"]
 SEEDS = list(range(100, 150))
 JOINT_SUCCESS_TARGET = 50
@@ -606,25 +607,27 @@ def write_report(
         "",
         f"The 50-run results point most strongly to Assignment First as the best overall heuristic for this project. It had the highest success count at {int(reliability_winner['success_count'])}/{len(SEEDS)} runs, it had the best successful-run mean makespan at {float(speed_winner['success_mean_makespan_sec']):.3f} seconds, and it also had the best penalty-adjusted mean makespan at {float(overall_winner['mean_makespan_sec']):.3f} seconds when unfinished runs were counted as bad outcomes. FIFO remained a strong baseline and sometimes won individual runs, but overall Assignment First gave the best balance of speed and robustness in the main 50-run study. Order Driven still showed useful logic and some competitive runs, but on this fixed 50-run sample it did not beat Assignment First overall. Greedy was the least reliable of the four.",
         "",
-        "The main files to submit from this final validation are `simulation_validation_results.csv`, which contains the per-seed results for all four heuristics across the 50 generated runs, and `simulation_validation_summary.csv`, which contains the aggregated comparison. This text file is the narrative report for that same 50-run study.",
+        "The main files to submit from this final validation are `results/validation/simulation_validation_results.csv`, which contains the per-seed results for all four heuristics across the 50 generated runs, and `results/validation/simulation_validation_summary.csv`, which contains the aggregated comparison. This text file is the narrative report for that same 50-run study.",
     ]
 
     report_path.write_text("\n".join(lines))
 
 
 def main() -> None:
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
     physical_df = build_physical_comparison_df()
     physical_detail_df = build_physical_detailed_df()
     results_df = build_batch_results_df()
     summary_df = build_summary_df(results_df)
     failure_df = build_failure_investigation_df()
 
-    results_path = REPO_ROOT / "simulation_validation_results.csv"
-    failure_path = REPO_ROOT / "simulation_failure_investigation.csv"
-    physical_path = REPO_ROOT / "physical_vs_simulation_comparison.csv"
-    physical_detail_path = REPO_ROOT / "physical_vs_simulation_detailed.csv"
-    summary_path = REPO_ROOT / "simulation_validation_summary.csv"
-    report_path = REPO_ROOT / "simulation_validation_report.txt"
+    results_path = RESULTS_DIR / "simulation_validation_results.csv"
+    failure_path = RESULTS_DIR / "simulation_failure_investigation.csv"
+    physical_path = RESULTS_DIR / "physical_vs_simulation_comparison.csv"
+    physical_detail_path = RESULTS_DIR / "physical_vs_simulation_detailed.csv"
+    summary_path = RESULTS_DIR / "simulation_validation_summary.csv"
+    report_path = RESULTS_DIR / "simulation_validation_report.txt"
 
     results_df.to_csv(results_path, index=False)
     failure_df.to_csv(failure_path, index=False)
