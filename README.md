@@ -93,6 +93,98 @@ These files encode order contents and tote composition. Quantity values are expa
 - Main notebook: `MILP/MILP.ipynb`
 - Purpose: optimize assignment, sequencing, and release decisions jointly
 
+## How to Run
+
+### Common setup
+1. Install Python 3.10+ and Jupyter.
+2. Install the common packages used across the notebooks and MILP model:
+
+```powershell
+python -m pip install jupyter pandas numpy scipy matplotlib
+```
+
+3. Each method reads the three raw input CSV files by relative filename, so place the correct instance files inside the method folder you want to run:
+
+- `order_itemtypes.csv`
+- `order_quantities.csv`
+- `orders_totes.csv`
+
+If you want all methods to use the same instance, copy the same three CSV files into each method folder before running.
+
+### FIFO
+From the `FIFO/` folder, launch the notebook and run all cells:
+
+```powershell
+cd FIFO
+jupyter notebook FIFO_Baseline.ipynb
+```
+
+Current behavior:
+- reads `order_itemtypes.csv`, `order_quantities.csv`, and `orders_totes.csv` from `FIFO/`
+- exports `fifo_baseline_output.csv`
+- uses only the first `NUM_ORDERS` rows of the input tables by default
+
+### Assignment First
+From the `Assignment First/` folder, install the local package and run the generator:
+
+```powershell
+cd "Assignment First"
+python -m pip install -e .
+New-Item -ItemType Directory -Force outputs | Out-Null
+$env:PYTHONPATH = "src"
+python -m wareseq.generate_input --order-itemtypes data/order_itemtypes.csv --order-quantities data/order_quantities.csv --order-totes data/orders_totes.csv --example-input data/example_input.csv --assign-method balance_units --out outputs/simulator_input.csv --pick-plan-out outputs/pick_plan.csv
+```
+
+Current behavior:
+- reads input files from `Assignment First/data/`
+- writes the simulator input file to `Assignment First/outputs/simulator_input.csv`
+- writes the pick plan to `Assignment First/outputs/pick_plan.csv`
+- supports `round_robin` and `balance_units` for `--assign-method`
+
+### Greedy Heuristic
+From the `Greedy Heuristic/` folder, launch the notebook and run all cells:
+
+```powershell
+cd "Greedy Heuristic"
+jupyter notebook greedy_heuristic.ipynb
+```
+
+Current behavior:
+- reads `order_itemtypes.csv`, `order_quantities.csv`, and `orders_totes.csv` from `Greedy Heuristic/`
+- exports `greedy_heuristic_output.csv`
+- uses only the first `NUM_ORDERS` rows of the input tables by default
+
+### Order Driven
+From the `Order Driven/` folder, launch the notebook and run all cells:
+
+```powershell
+cd "Order Driven"
+jupyter notebook order_driven_heurisitc.ipynb
+```
+
+Current behavior:
+- reads `order_itemtypes.csv`, `order_quantities.csv`, and `orders_totes.csv` from `Order Driven/`
+- exports `order_driven_heuristic_output.csv`
+- currently reads only the first 6 rows of the input tables (`nrows=6`)
+
+### MILP
+From the `MILP/` folder, launch the notebook and run all cells:
+
+```powershell
+cd MILP
+jupyter notebook MILP.ipynb
+```
+
+Current behavior:
+- reads `order_itemtypes.csv`, `order_quantities.csv`, and `orders_totes.csv` from `MILP/`
+- optimizes the makespan objective
+- uses a `3600` second time limit and `0.02` MIP relative gap in the current notebook
+- exports `MSE433_M3_all_results.csv`
+- also generates `MSE433_M3_generated_input.csv` and `MSE433_M3_generated_input_first_6_orders.csv`
+
+### Running a different instance
+If you generate a new data instance, replace the three input CSV files in the method folder you plan to run. For the seed-based MILP experiments, each `MILP/seed_xxx/` folder already contains its own set of raw CSV files; move or copy those files into `MILP/` before running the notebook, or update the notebook paths to point to that seed folder directly.
+
 ## Validation and Analysis
 Shared validation code lives in `validation/`.
 
